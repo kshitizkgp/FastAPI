@@ -1,8 +1,9 @@
 import uuid as uuid_pkg
 from datetime import UTC, datetime
 from typing import Any
+from typing import Annotated
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, field_serializer, EmailStr
 
 
 class HealthCheck(BaseModel):
@@ -51,10 +52,29 @@ class PersistentDeletion(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    expires_at: str
 
 
 class TokenData(BaseModel):
     username_or_email: str
+
+
+class BackendTokens(BaseModel):
+    access_token: Token
+    refresh_token: Token
+
+
+class UserDetails(BaseModel):
+
+    name: Annotated[str, Field(min_length=2, max_length=30, examples=["User Userson"])]
+    username: Annotated[str, Field(min_length=2, max_length=20, pattern=r"^[a-z0-9]+$", examples=["userson"])]
+    email: Annotated[EmailStr, Field(examples=["user.userson@example.com"])]
+    profile_image_url: str
+
+
+class LoginResponse(BaseModel):
+    user: UserDetails
+    backend_tokens: BackendTokens
 
 
 class TokenBlacklistBase(BaseModel):

@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     # -------- replace with comment to run with gunicorn --------
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    # command: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+#    command: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
     env_file:
       - ./src/.env
     # -------- replace with comment if you are using nginx --------
@@ -15,6 +15,9 @@ services:
       - "8000:8000"
     # expose:
     #   - "8000"
+    # for local run, we use the local config.
+    environment:
+      - FASTAPI_ENV=local  # Set this to 'local' for local development
     depends_on:
       - db
       - redis
@@ -80,47 +83,47 @@ services:
   #     - web
 
   #-------- uncomment to create first superuser --------
-  # create_superuser:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   env_file:
-  #     - ./src/.env
-  #   depends_on:
-  #     - db
-  #     - web
-  #   command: python -m src.scripts.create_first_superuser
-  #   volumes:
-  #     - ./src:/code/src
+  create_superuser:
+   build:
+     context: .
+     dockerfile: Dockerfile
+   env_file:
+     - ./src/.env
+   depends_on:
+     - db
+     - web
+   command: python -m src.scripts.create_first_superuser
+   volumes:
+     - ./src:/code/src
 
   #-------- uncomment to run tests --------
-  # pytest:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   env_file:
-  #     - ./src/.env
-  #   depends_on:
-  #     - db
-  #     - create_superuser
-  #     - redis
-  #   command: python -m pytest ./tests
-  #   volumes:
-  #     - .:/code
+  pytest:
+   build:
+     context: .
+     dockerfile: Dockerfile
+   env_file:
+     - ./src/.env
+   depends_on:
+     - db
+     - create_superuser
+     - redis
+   command: python -m pytest ./tests
+   volumes:
+     - .:/code
 
   #-------- uncomment to create first tier --------
-  # create_tier:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   env_file:
-  #     - ./src/.env
-  #   depends_on:
-  #     - db
-  #     - web
-  #   command: python -m src.scripts.create_first_tier
-  #   volumes:
-  #     - ./src:/code/src
+#  create_tier:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     env_file:
+#       - ./src/.env
+#     depends_on:
+#       - db
+#       - web
+#     command: python -m src.scripts.create_first_tier
+#     volumes:
+#       - ./src:/code/src
 
 volumes:
   postgres-data:

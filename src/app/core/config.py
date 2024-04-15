@@ -4,8 +4,18 @@ from enum import Enum
 from pydantic_settings import BaseSettings
 from starlette.config import Config
 
+# Environment variable to determine which settings to load
+env = os.getenv('FASTAPI_ENV', 'production')  # Defaults to 'production' if not set
+
+# Define the path for each environment's .env file
+env_paths = {
+    'local': os.path.join(os.getcwd(), '.env'),
+    'production': os.path.join(os.getcwd(), '.env.production')
+}
+
+env_file = env_paths.get(env, '.env')  # Default to '.env' if an unexpected value is found
 current_file_dir = os.path.dirname(os.path.realpath(__file__))
-env_path = os.path.join(current_file_dir, "..", "..", ".env")
+env_path = os.path.join(current_file_dir, "..", "..", env_file)
 config = Config(env_path)
 
 
@@ -115,7 +125,7 @@ class Settings(
     CryptSettings,
     FirstUserSettings,
     TestSettings,
-    RedisCacheSettings,
+    # RedisCacheSettings,
     ClientSideCacheSettings,
     RedisQueueSettings,
     RedisRateLimiterSettings,

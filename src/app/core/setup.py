@@ -1,5 +1,6 @@
 from collections.abc import AsyncGenerator, Callable
 from contextlib import _AsyncGeneratorContextManager, asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Any
 
 import anyio
@@ -19,9 +20,9 @@ from .config import (
     DatabaseSettings,
     EnvironmentOption,
     EnvironmentSettings,
-    RedisCacheSettings,
-    RedisQueueSettings,
-    RedisRateLimiterSettings,
+    # RedisCacheSettings,
+    # RedisQueueSettings,
+    # RedisRateLimiterSettings,
     settings,
 )
 from .db.database import Base
@@ -70,17 +71,22 @@ async def set_threadpool_tokens(number_of_tokens: int = 100) -> None:
     limiter.total_tokens = number_of_tokens
 
 
+# Set up CORS middleware configurations
+origins = [
+    "http://localhost:3000",  # Allow your frontend origin
+    "http://localhost:8080",  # If you have other clients on different ports
+    # You can add more origins as needed or use "*" to allow all origins
+]
+
+
 def lifespan_factory(
-    settings: (
-        DatabaseSettings
-        | RedisCacheSettings
-        | AppSettings
-        | ClientSideCacheSettings
-        | RedisQueueSettings
-        | RedisRateLimiterSettings
-        | EnvironmentSettings
-    ),
-    create_tables_on_start: bool = True,
+        settings: (
+                DatabaseSettings
+                | AppSettings
+                | ClientSideCacheSettings
+                | EnvironmentSettings
+        ),
+        create_tables_on_start: bool = True,
 ) -> Callable[[FastAPI], _AsyncGeneratorContextManager[Any]]:
     """Factory to create a lifespan async context manager for a FastAPI app."""
 
@@ -91,43 +97,40 @@ def lifespan_factory(
         if isinstance(settings, DatabaseSettings) and create_tables_on_start:
             await create_tables()
 
-        if isinstance(settings, RedisCacheSettings):
-            await create_redis_cache_pool()
-
-        if isinstance(settings, RedisQueueSettings):
-            await create_redis_queue_pool()
-
-        if isinstance(settings, RedisRateLimiterSettings):
-            await create_redis_rate_limit_pool()
+        # if isinstance(settings, RedisCacheSettings):
+        #     await create_redis_cache_pool()
+        #
+        # if isinstance(settings, RedisQueueSettings):
+        #     await create_redis_queue_pool()
+        #
+        # if isinstance(settings, RedisRateLimiterSettings):
+        #     await create_redis_rate_limit_pool()
 
         yield
-
-        if isinstance(settings, RedisCacheSettings):
-            await close_redis_cache_pool()
-
-        if isinstance(settings, RedisQueueSettings):
-            await close_redis_queue_pool()
-
-        if isinstance(settings, RedisRateLimiterSettings):
-            await close_redis_rate_limit_pool()
+        #
+        # if isinstance(settings, RedisCacheSettings):
+        #     await close_redis_cache_pool()
+        #
+        # if isinstance(settings, RedisQueueSettings):
+        #     await close_redis_queue_pool()
+        #
+        # if isinstance(settings, RedisRateLimiterSettings):
+        #     await close_redis_rate_limit_pool()
 
     return lifespan
 
 
 # -------------- application --------------
 def create_application(
-    router: APIRouter,
-    settings: (
-        DatabaseSettings
-        | RedisCacheSettings
-        | AppSettings
-        | ClientSideCacheSettings
-        | RedisQueueSettings
-        | RedisRateLimiterSettings
-        | EnvironmentSettings
-    ),
-    create_tables_on_start: bool = True,
-    **kwargs: Any,
+        router: APIRouter,
+        settings: (
+                DatabaseSettings
+                | AppSettings
+                | ClientSideCacheSettings
+                | EnvironmentSettings
+        ),
+        create_tables_on_start: bool = True,
+        **kwargs: Any,
 ) -> FastAPI:
     """Creates and configures a FastAPI application based on the provided settings.
 
@@ -186,6 +189,15 @@ def create_application(
 
     application = FastAPI(lifespan=lifespan, **kwargs)
     application.include_router(router)
+
+    # TODO(kshitizkr): Add this to the config file.
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,  # List of origins that are allowed to make requests
+        allow_credentials=True,  # Allow credentials (cookies, authorization headers, etc.)
+        allow_methods=["*"],  # Allow all methods
+        allow_headers=["*"],  # Allow all headers
+    )
 
     if isinstance(settings, ClientSideCacheSettings):
         application.add_middleware(ClientCacheMiddleware, max_age=settings.CLIENT_CACHE_MAX_AGE)
