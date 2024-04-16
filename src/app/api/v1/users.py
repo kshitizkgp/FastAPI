@@ -9,6 +9,7 @@ from ...core.db.database import async_get_db
 from ...core.exceptions.http_exceptions import DuplicateValueException, ForbiddenException, NotFoundException
 from ...core.security import blacklist_token, get_password_hash, oauth2_scheme
 from ...crud.crud_rate_limit import crud_rate_limits
+from ...core.utils.cache import cache
 from ...crud.crud_tier import crud_tiers
 from ...crud.crud_users import crud_users
 from ...models.tier import Tier
@@ -61,6 +62,7 @@ async def read_users_me(request: Request, current_user: Annotated[UserRead, Depe
 
 
 @router.get("/user/{username}", response_model=UserRead)
+@cache(key_prefix="{username}_post_cache", expiration=3600, resource_id_name="username")
 async def read_user(request: Request, username: str, db: Annotated[AsyncSession, Depends(async_get_db)]) -> dict:
     db_user: UserRead | None = await crud_users.get(
         db=db, schema_to_select=UserRead, username=username, is_deleted=False
