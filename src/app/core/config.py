@@ -3,9 +3,15 @@ from enum import Enum
 
 from pydantic_settings import BaseSettings
 from starlette.config import Config
+import redis
 
 # Environment variable to determine which settings to load
 env = os.getenv('FASTAPI_ENV', 'production')  # Defaults to 'production' if not set
+
+# GCP sets the rdis configs in these environment variables.
+redis_host = os.environ.get("REDISHOST", "localhost")
+redis_port = int(os.environ.get("REDISPORT", 6379))
+redis_client = redis.StrictRedis(host=redis_host, port=redis_port)
 
 # Define the path for each environment's .env file
 env_paths = {
@@ -84,8 +90,8 @@ class TestSettings(BaseSettings):
 
 
 class RedisCacheSettings(BaseSettings):
-    REDIS_CACHE_HOST: str = config("REDIS_CACHE_HOST", default="localhost")
-    REDIS_CACHE_PORT: int = config("REDIS_CACHE_PORT", default=6379)
+    REDIS_CACHE_HOST: str = redis_host
+    REDIS_CACHE_PORT: int = redis_port
     REDIS_CACHE_URL: str = f"redis://{REDIS_CACHE_HOST}:{REDIS_CACHE_PORT}"
 
 
@@ -94,13 +100,13 @@ class ClientSideCacheSettings(BaseSettings):
 
 
 class RedisQueueSettings(BaseSettings):
-    REDIS_QUEUE_HOST: str = config("REDIS_QUEUE_HOST", default="localhost")
-    REDIS_QUEUE_PORT: int = config("REDIS_QUEUE_PORT", default=6379)
+    REDIS_QUEUE_HOST: str = redis_host
+    REDIS_QUEUE_PORT: int = redis_port
 
 
 class RedisRateLimiterSettings(BaseSettings):
-    REDIS_RATE_LIMIT_HOST: str = config("REDIS_RATE_LIMIT_HOST", default="localhost")
-    REDIS_RATE_LIMIT_PORT: int = config("REDIS_RATE_LIMIT_PORT", default=6379)
+    REDIS_RATE_LIMIT_HOST: str = redis_host
+    REDIS_RATE_LIMIT_PORT: int = redis_port
     REDIS_RATE_LIMIT_URL: str = f"redis://{REDIS_RATE_LIMIT_HOST}:{REDIS_RATE_LIMIT_PORT}"
 
 
@@ -125,7 +131,7 @@ class Settings(
     CryptSettings,
     FirstUserSettings,
     TestSettings,
-    # RedisCacheSettings,
+    RedisCacheSettings,
     ClientSideCacheSettings,
     RedisQueueSettings,
     RedisRateLimiterSettings,

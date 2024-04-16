@@ -20,9 +20,9 @@ from .config import (
     DatabaseSettings,
     EnvironmentOption,
     EnvironmentSettings,
-    # RedisCacheSettings,
-    # RedisQueueSettings,
-    # RedisRateLimiterSettings,
+    RedisCacheSettings,
+    RedisQueueSettings,
+    RedisRateLimiterSettings,
     settings,
 )
 from .db.database import Base
@@ -97,25 +97,25 @@ def lifespan_factory(
         if isinstance(settings, DatabaseSettings) and create_tables_on_start:
             await create_tables()
 
-        # if isinstance(settings, RedisCacheSettings):
-        #     await create_redis_cache_pool()
-        #
-        # if isinstance(settings, RedisQueueSettings):
-        #     await create_redis_queue_pool()
-        #
-        # if isinstance(settings, RedisRateLimiterSettings):
-        #     await create_redis_rate_limit_pool()
+        if isinstance(settings, RedisCacheSettings):
+            await create_redis_cache_pool()
+
+        if isinstance(settings, RedisQueueSettings):
+            await create_redis_queue_pool()
+
+        if isinstance(settings, RedisRateLimiterSettings):
+            await create_redis_rate_limit_pool()
 
         yield
-        #
-        # if isinstance(settings, RedisCacheSettings):
-        #     await close_redis_cache_pool()
-        #
-        # if isinstance(settings, RedisQueueSettings):
-        #     await close_redis_queue_pool()
-        #
-        # if isinstance(settings, RedisRateLimiterSettings):
-        #     await close_redis_rate_limit_pool()
+
+        if isinstance(settings, RedisCacheSettings):
+            await close_redis_cache_pool()
+
+        if isinstance(settings, RedisQueueSettings):
+            await close_redis_queue_pool()
+
+        if isinstance(settings, RedisRateLimiterSettings):
+            await close_redis_rate_limit_pool()
 
     return lifespan
 
