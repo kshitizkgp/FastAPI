@@ -24,6 +24,7 @@ from .config import (
     RedisQueueSettings,
     RedisRateLimiterSettings,
     settings,
+    REDIS_CACHE_ENABLED,
 )
 from .db.database import Base
 from .db.database import async_engine as engine
@@ -82,8 +83,11 @@ origins = [
 def lifespan_factory(
         settings: (
                 DatabaseSettings
+                | RedisCacheSettings
                 | AppSettings
                 | ClientSideCacheSettings
+                | RedisQueueSettings
+                | RedisRateLimiterSettings
                 | EnvironmentSettings
         ),
         create_tables_on_start: bool = True,
@@ -98,24 +102,30 @@ def lifespan_factory(
             await create_tables()
 
         if isinstance(settings, RedisCacheSettings):
-            await create_redis_cache_pool()
+            if REDIS_CACHE_ENABLED:
+                await create_redis_cache_pool()
 
         if isinstance(settings, RedisQueueSettings):
-            await create_redis_queue_pool()
+            if REDIS_CACHE_ENABLED:
+                await create_redis_queue_pool()
 
         if isinstance(settings, RedisRateLimiterSettings):
-            await create_redis_rate_limit_pool()
+            if REDIS_CACHE_ENABLED:
+                await create_redis_rate_limit_pool()
 
         yield
 
         if isinstance(settings, RedisCacheSettings):
-            await close_redis_cache_pool()
+            if REDIS_CACHE_ENABLED:
+                await close_redis_cache_pool()
 
         if isinstance(settings, RedisQueueSettings):
-            await close_redis_queue_pool()
+            if REDIS_CACHE_ENABLED:
+                await close_redis_queue_pool()
 
         if isinstance(settings, RedisRateLimiterSettings):
-            await close_redis_rate_limit_pool()
+            if REDIS_CACHE_ENABLED:
+                await close_redis_rate_limit_pool()
 
     return lifespan
 
@@ -125,8 +135,11 @@ def create_application(
         router: APIRouter,
         settings: (
                 DatabaseSettings
+                | RedisCacheSettings
                 | AppSettings
                 | ClientSideCacheSettings
+                | RedisQueueSettings
+                | RedisRateLimiterSettings
                 | EnvironmentSettings
         ),
         create_tables_on_start: bool = True,

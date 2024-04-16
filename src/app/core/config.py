@@ -24,6 +24,8 @@ current_file_dir = os.path.dirname(os.path.realpath(__file__))
 env_path = os.path.join(current_file_dir, "..", "..", env_file)
 config = Config(env_path)
 
+REDIS_CACHE_ENABLED: bool = config("REDIS_CACHE_ENABLED")
+
 
 class AppSettings(BaseSettings):
     APP_NAME: str = config("APP_NAME", default="FastAPI app")

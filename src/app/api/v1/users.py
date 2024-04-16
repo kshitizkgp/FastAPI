@@ -62,7 +62,7 @@ async def read_users_me(request: Request, current_user: Annotated[UserRead, Depe
 
 
 @router.get("/user/{username}", response_model=UserRead)
-@cache(key_prefix="{username}_post_cache", expiration=3600, resource_id_name="username")
+# @cache(key_prefix="{username}_post_cache", expiration=3600, resource_id_name="username")
 async def read_user(request: Request, username: str, db: Annotated[AsyncSession, Depends(async_get_db)]) -> dict:
     db_user: UserRead | None = await crud_users.get(
         db=db, schema_to_select=UserRead, username=username, is_deleted=False
