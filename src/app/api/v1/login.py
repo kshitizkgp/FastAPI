@@ -16,7 +16,7 @@ from ...core.security import (
     create_access_token,
     create_refresh_token,
     verify_token,
-    security_scheme
+    security_scheme,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,18 +25,22 @@ router = APIRouter(tags=["login"])
 
 @router.post("/login", response_model=LoginResponse)
 async def login_for_access_token(
-        response: Response,
-        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-        db: Annotated[AsyncSession, Depends(async_get_db)],
+    response: Response,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> LoginResponse:
-    user = await authenticate_user(username_or_email=form_data.username, password=form_data.password, db=db)
+    user = await authenticate_user(
+        username_or_email=form_data.username, password=form_data.password, db=db
+    )
     logger.error(user)
     if not user:
         raise UnauthorizedException("Wrong username, email or password.")
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_expires_at = datetime.now(timezone.utc) + access_token_expires
-    access_token = await create_access_token(data={"sub": user["username"]}, expires_delta=access_token_expires)
+    access_token = await create_access_token(
+        data={"sub": user["username"]}, expires_delta=access_token_expires
+    )
 
     refresh_token = await create_refresh_token(data={"sub": user["username"]})
     refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
@@ -53,14 +57,14 @@ async def login_for_access_token(
             access_token=Token(
                 access_token=access_token,
                 token_type="bearer",
-                expires_at=access_expires_at.isoformat() + 'Z'
+                expires_at=access_expires_at.isoformat() + "Z",
             ),
             refresh_token=Token(
                 access_token=refresh_token,
                 token_type="bearer",
-                expires_at=refresh_expires_at.isoformat() + 'Z'
-            )
-        )
+                expires_at=refresh_expires_at.isoformat() + "Z",
+            ),
+        ),
     )
 
 
@@ -68,27 +72,33 @@ async def login_for_access_token(
 # access_token as key containing the token.
 @router.post("/token", response_model=Token)
 async def get_access_token(
-        response: Response,
-        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-        db: Annotated[AsyncSession, Depends(async_get_db)],
+    response: Response,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> Token:
-    user = await authenticate_user(username_or_email=form_data.username, password=form_data.password, db=db)
+    user = await authenticate_user(
+        username_or_email=form_data.username, password=form_data.password, db=db
+    )
     if not user:
         raise UnauthorizedException("Wrong username, email or password.")
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_expires_at = datetime.now(timezone.utc) + access_token_expires
-    access_token = await create_access_token(data={"sub": user["username"]}, expires_delta=access_token_expires)
+    access_token = await create_access_token(
+        data={"sub": user["username"]}, expires_delta=access_token_expires
+    )
 
     return Token(
         access_token=access_token,
         token_type="bearer",
-        expires_at=access_expires_at.isoformat() + 'Z'
+        expires_at=access_expires_at.isoformat() + "Z",
     )
 
 
 @router.post("/refresh", dependencies=[Depends(security_scheme)])
-async def refresh_access_token(request: Request, db: AsyncSession = Depends(async_get_db)) -> BackendTokens:
+async def refresh_access_token(
+    request: Request, db: AsyncSession = Depends(async_get_db)
+) -> BackendTokens:
     auth_header = request.headers.get("Authorization")
     if not auth_header:
         raise UnauthorizedException("Authorization header missing.")
@@ -104,7 +114,9 @@ async def refresh_access_token(request: Request, db: AsyncSession = Depends(asyn
     if not user_data:
         raise UnauthorizedException("Invalid refresh token.")
 
-    new_access_token = await create_access_token(data={"sub": user_data.username_or_email})
+    new_access_token = await create_access_token(
+        data={"sub": user_data.username_or_email}
+    )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_expires_at = datetime.now(timezone.utc) + access_token_expires
 
@@ -112,11 +124,9 @@ async def refresh_access_token(request: Request, db: AsyncSession = Depends(asyn
         access_token=Token(
             access_token=new_access_token,
             token_type="bearer",
-            expires_at=access_expires_at.isoformat() + 'Z'
+            expires_at=access_expires_at.isoformat() + "Z",
         ),
         refresh_token=Token(
-            access_token=refresh_token,
-            token_type="bearer",
-            expires_at=""
-        )
+            access_token=refresh_token, token_type="bearer", expires_at=""
+        ),
     )

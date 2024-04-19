@@ -20,6 +20,7 @@ COPY --from=requirements-stage /tmp/requirements.txt /code/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
+#TODO (kshitizkr): Need to remove this env file when setting up CI/CD.
 COPY ./src/.env.production /code/.env.production
 COPY ./src/app /code/app
 
