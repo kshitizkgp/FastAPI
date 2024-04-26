@@ -83,6 +83,21 @@ async def read_post(
     id: int,
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> dict:
+    """_summary_
+
+    Args:
+        request (Request): _description_
+        username (str): _description_
+        id (int): _description_
+        db (Annotated[AsyncSession, Depends): _description_
+
+    Raises:
+        NotFoundException: _description_
+        NotFoundException: _description_
+
+    Returns:
+        dict: _description_
+    """
     db_user = await crud_users.get(
         db=db, schema_to_select=UserRead, username=username, is_deleted=False
     )
